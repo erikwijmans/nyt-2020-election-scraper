@@ -407,15 +407,21 @@ with open('battleground-state-changes.xml', 'w') as rssfile:
   <lastBuildDate>{email.utils.formatdate(batch_time.timestamp())}</lastBuildDate>''')    
 
     for state, results in summarized.items():
-        try:
-            result = results[0]
-        except IndexError:
+        if len(results) == 0:
             continue
+
+        result = results[0]
         state_slug = state.split('(')[0].strip().replace(' ', '-').lower()
         timestamp = result.timestamp.timestamp()
         rssfile.write(f'''
   <item>
-   <description>{state}: {result.leading_candidate_name} +{result.vote_differential}</description>
+   <description>{state}: {result.leading_candidate_name} +{result.vote_differential:,}''')
+        if len(results) >= 2:
+            prev_result = results[1]
+            vote_differential_change = result.vote_differential - prev_result.vote_differential
+            rssfile.write(f' (∇: {vote_differential_change:+,})')
+
+        rssfile.write(f'''</description>
    <pubDate>{email.utils.formatdate(timestamp)}</pubDate>
    <guid isPermaLink="false">{state_slug}@{timestamp}</guid>
   </item>''')
